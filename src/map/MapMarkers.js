@@ -5,7 +5,7 @@ import { map } from './core/MapView';
 import useMapLayer from './core/useMapLayer';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
-import { findFonts, toMapCoordinates } from './core/mapUtil';
+import { findFonts, PIN_HEAD_OFFSET, PIN_HEIGHT, toMapCoordinates } from './core/mapUtil';
 
 const onMouseEnter = () => (map.getCanvas().style.cursor = 'pointer');
 const onMouseLeave = () => (map.getCanvas().style.cursor = '');
@@ -37,33 +37,22 @@ const MapMarkers = ({ markers, showTitles, cluster, direction, onClick, disabled
     map.easeTo({ center: feature.geometry.coordinates, zoom });
   }, []);
 
+  const markerEvents = onClick
+    ? { on: { mouseenter: onMouseEnter, mouseleave: onMouseLeave, click: onMarkerClick } }
+    : {};
+
   const layers = [
     {
       type: 'symbol',
       filter: ['!has', 'point_count'],
-      layout: showTitles
-        ? {
-            'icon-image': '{image}',
-            'icon-size': iconScale,
-            'icon-allow-overlap': true,
-            'text-field': '{title}',
-            'text-allow-overlap': true,
-            'text-anchor': 'bottom',
-            'text-offset': [0, -2 * iconScale],
-            'text-font': findFonts(map),
-            'text-size': 12,
-            'symbol-sort-key': ['get', 'id'],
-          }
-        : {
-            'icon-image': '{image}',
-            'icon-size': iconScale,
-            'icon-allow-overlap': true,
-            'symbol-sort-key': ['get', 'id'],
-          },
-      ...(showTitles ? { paint: { 'text-halo-color': 'white', 'text-halo-width': 1 } } : {}),
-      ...(onClick
-        ? { on: { mouseenter: onMouseEnter, mouseleave: onMouseLeave, click: onMarkerClick } }
-        : {}),
+      layout: {
+        'icon-image': '{image}',
+        'icon-size': iconScale,
+        'icon-anchor': 'bottom',
+        'icon-allow-overlap': true,
+        'symbol-sort-key': ['get', 'id'],
+      },
+      ...markerEvents,
     },
   ];
 
@@ -79,6 +68,39 @@ const MapMarkers = ({ markers, showTitles, cluster, direction, onClick, disabled
         'icon-rotate': ['get', 'rotation'],
         'icon-rotation-alignment': 'map',
       },
+      // Rotate around the point, then lift onto the pin head (translate is not rotated, unlike icon-offset)
+      paint: {
+        'icon-translate': [0, -PIN_HEAD_OFFSET * iconScale],
+        'icon-translate-anchor': 'viewport',
+      },
+    });
+  }
+
+  // Titles go in their own layer so they draw above every pin and arrow
+  if (showTitles) {
+    layers.push({
+      key: 'title',
+      type: 'symbol',
+      filter: ['all', ['!has', 'point_count'], ['!=', 'title', '']],
+      layout: {
+        'text-field': '{title}',
+        'text-font': findFonts(map),
+        'text-size': 13,
+        'text-anchor': 'bottom',
+        // Title sits just above the pin head (offset is in ems of the 13px text)
+        'text-offset': [0, -(PIN_HEIGHT * iconScale + 5) / 13],
+        'text-max-width': 12,
+        'text-allow-overlap': true,
+        'icon-image': 'label',
+        'icon-text-fit': 'both',
+        'icon-text-fit-padding': [2, 5, 2, 5],
+        'icon-allow-overlap': true,
+        'symbol-sort-key': ['get', 'id'],
+      },
+      paint: {
+        'text-color': '#0F172A',
+      },
+      ...markerEvents,
     });
   }
 

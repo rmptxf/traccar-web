@@ -79,6 +79,105 @@ export const prepareIcon = (background, icon, color) => {
   return context.getImageData(0, 0, canvas.width, canvas.height);
 };
 
+// Teardrop pin geometry (logical px). The tip touches the bottom edge, so markers use icon-anchor: bottom.
+export const PIN_WIDTH = 44;
+export const PIN_HEIGHT = 56;
+const PIN_HEAD_Y = 20;
+const PIN_HEAD_RADIUS = 16;
+const PIN_TIP_Y = 51;
+// Distance from the pin tip (anchor point) up to the head center, used to place the direction arrow
+export const PIN_HEAD_OFFSET = PIN_HEIGHT - PIN_HEAD_Y;
+
+const pinPath = (scale) => {
+  const cx = PIN_WIDTH / 2;
+  const angle = Math.acos(PIN_HEAD_RADIUS / (PIN_TIP_Y - PIN_HEAD_Y));
+  const path = new Path2D();
+  path.arc(
+    cx * scale,
+    PIN_HEAD_Y * scale,
+    PIN_HEAD_RADIUS * scale,
+    Math.PI / 2 + angle,
+    Math.PI / 2 - angle,
+  );
+  path.lineTo(cx * scale, PIN_TIP_Y * scale);
+  path.closePath();
+  return path;
+};
+
+export const preparePin = (icon, color) => {
+  const scale = devicePixelRatio;
+  const canvas = document.createElement('canvas');
+  canvas.width = PIN_WIDTH * scale;
+  canvas.height = PIN_HEIGHT * scale;
+
+  const context = canvas.getContext('2d');
+  const path = pinPath(scale);
+
+  context.save();
+  context.shadowColor = 'rgba(0, 0, 0, 0.35)';
+  context.shadowBlur = 3 * scale;
+  context.shadowOffsetY = 1.5 * scale;
+  context.fillStyle = color;
+  context.fill(path);
+  context.restore();
+
+  context.lineWidth = 2 * scale;
+  context.lineJoin = 'round';
+  context.strokeStyle = 'white';
+  context.stroke(path);
+
+  const cx = (PIN_WIDTH / 2) * scale;
+  const cy = PIN_HEAD_Y * scale;
+  if (icon) {
+    const size = 20 * scale;
+    context.drawImage(canvasTintImage(icon, 'white'), cx - size / 2, cy - size / 2, size, size);
+  } else {
+    context.beginPath();
+    context.arc(cx, cy, 6 * scale, 0, 2 * Math.PI);
+    context.fillStyle = 'white';
+    context.fill();
+  }
+
+  return context.getImageData(0, 0, canvas.width, canvas.height);
+};
+
+// Rounded "pill" behind marker titles, stretched around the text with icon-text-fit
+export const prepareLabel = () => {
+  const scale = devicePixelRatio;
+  const width = 26;
+  const height = 24;
+  const canvas = document.createElement('canvas');
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+
+  const context = canvas.getContext('2d');
+  const path = new Path2D();
+  path.roundRect(3 * scale, 2 * scale, 20 * scale, 18 * scale, 6 * scale);
+
+  context.save();
+  context.shadowColor = 'rgba(0, 0, 0, 0.3)';
+  context.shadowBlur = 2.5 * scale;
+  context.shadowOffsetY = 1 * scale;
+  context.fillStyle = 'white';
+  context.fill(path);
+  context.restore();
+
+  context.lineWidth = 1 * scale;
+  context.strokeStyle = 'rgba(15, 23, 42, 0.15)';
+  context.stroke(path);
+
+  const px = (value) => Math.round(value * scale);
+  return {
+    image: context.getImageData(0, 0, canvas.width, canvas.height),
+    // Only the straight middle stretches, so the rounded ends keep their shape
+    options: {
+      stretchX: [[px(9), px(17)]],
+      stretchY: [[px(8), px(14)]],
+      content: [px(5), px(4), px(21), px(18)],
+    },
+  };
+};
+
 export const reverseCoordinates = (it) => {
   if (!it) {
     return it;

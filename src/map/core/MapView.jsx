@@ -8,7 +8,7 @@ import { useTheme } from '@mui/material';
 import MapSwitcher from '../control/MapSwitcher';
 import { useAttributePreference, usePreference } from '../../common/util/preferences';
 import usePersistedState from '../../common/util/usePersistedState';
-import { mapImages } from './preloadImages';
+import { mapImageOptions, mapImages } from './preloadImages';
 import useMapStyles from './useMapStyles';
 import { useAsyncTask } from '../../reactHelper';
 
@@ -63,6 +63,7 @@ const initMap = async () => {
     Object.entries(mapImages).forEach(([key, value]) => {
       map.addImage(key, value, {
         pixelRatio: window.devicePixelRatio,
+        ...mapImageOptions[key],
       });
     });
   }

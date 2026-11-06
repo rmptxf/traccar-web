@@ -1,4 +1,10 @@
-import { grey, green, indigo } from '@mui/material/colors';
+import { grey } from '@mui/material/colors';
+
+// GPSFlot brand: one navy brand colour; green, amber and red stay reserved for vehicle status
+const brand = {
+  primary: { light: '#1E3A8A', dark: '#60A5FA' },
+  secondary: { light: '#0369A1', dark: '#7DD3FC' },
+};
 
 const validatedColor = (color) => (/^#([0-9A-Fa-f]{3}){1,2}$/.test(color) ? color : null);
 
@@ -9,11 +15,13 @@ export default (server, darkMode) => ({
   },
   primary: {
     main:
-      validatedColor(server?.attributes?.colorPrimary) || (darkMode ? indigo[200] : indigo[900]),
+      validatedColor(server?.attributes?.colorPrimary) ||
+      (darkMode ? brand.primary.dark : brand.primary.light),
   },
   secondary: {
     main:
-      validatedColor(server?.attributes?.colorSecondary) || (darkMode ? green[200] : green[800]),
+      validatedColor(server?.attributes?.colorSecondary) ||
+      (darkMode ? brand.secondary.dark : brand.secondary.light),
   },
   neutral: {
     main: grey[500],

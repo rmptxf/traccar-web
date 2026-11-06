@@ -4,6 +4,15 @@ import svgr from 'vite-plugin-svgr';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
+// Branding: fills the ${...} placeholders that the stock Traccar server would substitute at runtime
+const brand = {
+  title: 'GPSFlot',
+  description: 'GPSFlot - Real-time fleet tracking',
+  colorPrimary: '#1E3A8A',
+};
+
+const fillBrand = (text) => text.replace(/\$\{(\w+)\}/g, (match, key) => brand[key] ?? match);
+
 export default defineConfig(() => ({
   server: {
     port: 3000,
@@ -19,6 +28,10 @@ export default defineConfig(() => ({
   plugins: [
     svgr(),
     react(),
+    {
+      name: 'brand-html',
+      transformIndexHtml: fillBrand,
+    },
     VitePWA({
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       workbox: {
@@ -26,9 +39,9 @@ export default defineConfig(() => ({
         globPatterns: ['**/*.{js,css,html,woff,woff2,mp3}'],
       },
       manifest: {
-        short_name: '${title}',
-        name: '${description}',
-        theme_color: '${colorPrimary}',
+        short_name: brand.title,
+        name: brand.description,
+        theme_color: brand.colorPrimary,
         icons: [
           {
             src: 'pwa-64x64.png',
